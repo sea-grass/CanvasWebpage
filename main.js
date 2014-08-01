@@ -13,8 +13,7 @@ content_elements = {};
 //Put them in an object, content_elements
 for (var key in elements) {
   (function(name, dom_element) {
-    if (!dom_element.hasChildNodes()) {
-      dom_element.innerHTML = name;
+    if (dom_element.childElementCount==0) {
       content_elements[name] = dom_element;
     }
   }(key, elements[key]));
@@ -38,7 +37,19 @@ for (var key in content_elements) {
       return window.getComputedStyle(dom_element).width.substring(0,window.getComputedStyle(dom_element).width.length-2);
     };
     var canvas_id = name+"_pjs";
-    dom_element.innerHTML="<canvas id='"+canvas_id+"' height='"+Number.parseInt(computeHeight())+"' width='"+Number.parseInt(computeWidth())+"'></canvas>";
+    dom_element.appendChild(function(canvas, id, height, width){
+      canvas.id = canvas_id;
+      canvas.height = height;
+      canvas.width = width;
+      canvas.style.position = "absolute";
+      canvas.style.top = 0;
+      canvas.style.left = 0;
+      return canvas;
+    }(document.createElement("canvas"),canvas_id,Number.parseInt(computeHeight()),Number.parseInt(computeWidth())));
+    content_elements[key].appendChild(function(p,text){
+      p.innerHTML=text;
+      return p;
+      }(document.createElement("p"),content_elements[key].id));
     content_elements[key] = {
       "dom_el": content_elements[key],
       "ctx": document.getElementById(canvas_id).getContext("2d") 
@@ -65,6 +76,7 @@ var els = content_elements;
     
   //Add draw method
   function draw() {
+/*
     ctx.font = "20px Georgia";
     ctx.fillStyle = "#4b4b4b";
     ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
@@ -85,8 +97,44 @@ var els = content_elements;
       ctx.fillStyle = "#fff";
       ctx.fillText((i/w)+1, i, ctx.canvas.height-"34");
     }
+*/
   }
-  
+  function sketchProc(processing) {
+    //Override draw function, by default it will be called 60 times per second
+    processing.draw = function() {
+	processing.height = ctx.canvas.height;
+        processing.width = ctx.canvas.width;
+      //determine center and max clock arm length
+      var centerX = processing.width / 2, centerY = processing.height / 2;
+      var maxArmLength = Math.min(centerX, centerY);
+
+      function drawArm(position, lengthScale, weight) {
+        processing.strokeWeight(weight);
+        processing.line(centerX, centerY,
+          centerX + Math.sin(position * 2 * Math.PI) * lengthScale * maxArmLength,
+          centerY - Math.cos(position * 2 * Math.PI) * lengthScale * maxArmLength);
+      }
+
+      //erase background
+      processing.background(224);
+
+      var now = new Date();
+
+      //Moving hours arm by small increments
+      var hoursPosition = (now.getHours() % 12 + now.getMinutes() / 60) / 12;
+      drawArm(hoursPosition, 0.5, 5);
+
+      //Moving minutes arm by small increments
+      var minutesPosition = (now.getMinutes() + now.getSeconds() / 60) / 60;
+      drawArm(minutesPosition, 0.80, 3);
+
+      //Moving hour arm by second increments
+      var secondsPosition = now.getSeconds() / 60;
+      drawArm(secondsPosition, 0.90, 1);
+    };
+  }
+
+
   function computeAndDraw(e) {
     var width = Number.parseInt(computeWidth()),
     height = Number.parseInt(computeHeight());
@@ -97,6 +145,9 @@ var els = content_elements;
   //Add resize event
   window.addEventListener('resize', computeAndDraw);
   computeAndDraw();
+  var processingInstance = new Processing(ctx.canvas, sketchProc);
+  processingInstance.height = ctx.canvas.height;
+  processingInstance.width = ctx.canvas.width;
 }(els["header"].ctx));
 
 //              //
