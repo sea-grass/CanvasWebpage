@@ -153,3 +153,6 @@ body {
 div canvas {
   z-index: -1;
 }
+#content canvas {
+  z-index: 0;
+}

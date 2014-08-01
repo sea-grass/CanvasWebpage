@@ -195,11 +195,33 @@ var els = content_elements;
   };
   
   function draw() {
-    ctx.font = "20px Georgia";
-    ctx.fillStyle = "#4b4b4b";
-    ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
-    ctx.fillStyle = "#e9e9e9";
-    ctx.fillText("canvas#"+ctx.canvas.id, 10, 50);
+  }
+  function sketchProc(processing) {
+    var arcX = ctx.canvas.width / 2,
+      arcY = ctx.canvas.height / 2;
+    var xinc = 2,
+      yinc = 5;
+    processing.setup = function() {
+      processing.width = ctx.canvas.width;
+      processing.height = ctx.canvas.height;
+      processing.background(100);
+    };
+    processing.draw = function() {
+      processing.arc(arcX,arcY,50,50,0,processing.TWO_PI);
+
+      arcX += xinc;
+      arcY += yinc;
+      if (arcX > ctx.canvas.width || arcX < 0) {
+        xinc *= -1;
+      }
+      if (arcY > ctx.canvas.height || arcY <0) {
+        yinc *= -1;
+      }
+    };
+    processing.mouseClicked = function() {
+      arcX = processing.mouseX; //NO IDEA WHY I HAVE TO OFFSET THE MOUSEX!!
+      arcY = processing.mouseY;
+    };
   }
   
   function computeAndDraw(e) {
@@ -212,6 +234,10 @@ var els = content_elements;
   //Add resize event
   window.addEventListener('resize', computeAndDraw);
   computeAndDraw();
+  var processingInstance = new Processing(ctx.canvas, sketchProc);
+  processingInstance.height = ctx.canvas.height;
+  processingInstance.width = ctx.canvas.width;
+
 }(els["content"].ctx));
 
 //              //
